@@ -5,6 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Interactive Learning</title>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/xterm/4.16.0/xterm.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xterm/4.16.0/xterm.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.0/socket.io.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/xterm/css/xterm.css">
+    <script src="https://unpkg.com/xterm/lib/xterm.js"></script>
     <style>
         body, html {
             height: 100%;
@@ -69,7 +74,8 @@
         </select>
         <textarea id="codeEditor" class="form-control" rows="15"></textarea>
         <button class="btn btn-success mt-3" id="runCode">Run Code</button>
-    </div>
+        <div id="terminal-container" style="width: 100%; height: 500px;"></div>
+
 </div>
 
 <!-- Button to toggle the code editor -->
@@ -77,7 +83,7 @@
 
 <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.min.js"></script>
 <script>
     // Toggle code editor visibility
     $('#toggleEditor').click(function () {
@@ -129,6 +135,86 @@
                 chatWindow.scrollTop = chatWindow.scrollHeight; // Scroll to the bottom
             });
         }
+    });
+    document.getElementById("runCode").addEventListener("click", function() {
+    const codeEditor = document.getElementById("codeEditor").value;
+    const language = document.getElementById("languageDropdown").value;
+
+    // Send the code to the backend for saving
+    fetch('/save_code', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            language: language,
+            code: codeEditor
+        })
+    })
+    // .then(response => response.json())
+    // .then(data => {
+    //     if (data.message) {
+    //         alert(data.message);
+    //     } else if (data.error) {
+    //         alert(`Error: ${data.error}`);
+    //     }
+    // })
+    // .catch(error => {
+    //     console.error('Error:', error);
+    // });
+});
+// document.addEventListener("DOMContentLoaded", function() {
+//     const term = new Terminal();
+//     const terminalContainer = document.getElementById("terminal");
+//     term.open(terminalContainer);
+
+//     const socket = io.connect('http://localhost:5000');
+
+//     let containerId = null;
+
+//     // Start the terminal
+//     document.getElementById("runTerminal").addEventListener("click", function() {
+//         socket.emit('start_terminal');
+//     });
+
+//     // Handle starting the terminal
+//     socket.on('terminal_started', function(data) {
+//         containerId = data.container_id;
+//         term.write("Terminal started...\r\n");
+//     });
+
+//     // Handle command input
+//     term.onData(function(input) {
+//         socket.emit('input_command', {
+//             container_id: containerId,
+//             command: input
+//         });
+//     });
+
+//     // Display command output
+//     socket.on('output_response', function(data) {
+//         term.write(data.output);
+//     });
+// });
+document.addEventListener("DOMContentLoaded", function() {
+        const term = new Terminal();
+        const terminalContainer = document.getElementById("terminal-container");
+        term.open(terminalContainer);
+
+        const socket = io.connect('https://5000-userfrom1995-codetutor-4jawtjmljtv.ws-us116.gitpod.io/');
+
+        // Start the terminal session
+        socket.emit('start_terminal');
+
+        // Listen for terminal output from the server
+        socket.on('terminal_output', function(data) {
+            term.write(data.output);
+        });
+
+        // Capture user input and send to the server
+        term.onData(function(input) {
+            socket.emit('input_command', { command: input });
+        });
     });
 </script>
 
