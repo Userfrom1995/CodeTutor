@@ -1,7 +1,8 @@
 const WebSocket = require('ws');
-const { spawn } = require('child_process');
 const express = require('express');
 const http = require('http');
+const os = require('os');
+const pty = require('node-pty');
 
 // Set up express server
 const app = express();
@@ -10,43 +11,44 @@ const wss = new WebSocket.Server({ server });
 
 app.use(express.static(__dirname + '/public'));
 
-// When a client connects to the WebSocket
+// Determine the correct shell based on platform
+function getShell() {
+  const platform = os.platform();
+  if (platform === 'win32') {
+    return 'cmd.exe'; // Use cmd.exe on Windows
+  } else {
+    return 'bash'; // Use bash on Linux and macOS
+  }
+}
+
+// Handle WebSocket connection
 wss.on('connection', (ws) => {
   console.log('New WebSocket connection established');
 
-  // Spawn a shell process (e.g., sh for Alpine or bash for other systems)
-  const shell = spawn('sh');
-
-  // Send shell output to the WebSocket client
-  shell.stdout.on('data', (data) => {
-    ws.send(data.toString());
+  // Create a pseudo-terminal with node-pty
+  const shellCommand = getShell();
+  const ptyProcess = pty.spawn(shellCommand, [], {
+    name: 'xterm-color',
+    cols: 80,
+    rows: 24,
+    cwd: process.env.HOME,
+    env: process.env
   });
 
-  shell.stderr.on('data', (data) => {
-    ws.send(data.toString());
+  // Send terminal data to the WebSocket client
+  ptyProcess.on('data', (data) => {
+    ws.send(data);
   });
 
-  // When the WebSocket client sends data (terminal input), write it to the shell
+  // Receive input from the WebSocket client and write it to the terminal
   ws.on('message', (message) => {
-    shell.stdin.write(message);
+    ptyProcess.write(message);
   });
 
-  // Handle client disconnection, cleanup
+  // Handle client disconnection
   ws.on('close', () => {
     console.log('Client disconnected');
-    shell.kill(); // Close the shell when the WebSocket client disconnects
-  });
-
-  // Handle shell process exit
-  shell.on('exit', (code) => {
-    console.log(`Shell process exited with code ${code}`);
-    ws.close();
-  });
-
-  // If an error occurs, close the WebSocket and shell
-  shell.on('error', (err) => {
-    console.error('Shell error:', err);
-    ws.close();
+    ptyProcess.kill(); // Kill the terminal when the client disconnects
   });
 });
 
