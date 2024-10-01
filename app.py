@@ -34,42 +34,42 @@ chat_history = [system_prompt]
 def home():
     return render_template('index.html')
 
-@socketio.on('start_terminal')
-def handle_start_terminal():
-    """Attach to the container and start a shell session."""
-    try:
-        container = client.containers.get(MAIN_CONTAINER_ID)
+# @socketio.on('start_terminal')
+# def handle_start_terminal():
+#     """Attach to the container and start a shell session."""
+#     try:
+#         container = client.containers.get(MAIN_CONTAINER_ID)
         
-        # Create a shell session inside the container (interactive terminal)
-        exec_id = client.api.exec_create(container.id, 'bash', stdin=True, tty=True)
-        exec_stream = client.api.exec_start(exec_id, stream=True, tty=True)
+#         # Create a shell session inside the container (interactive terminal)
+#         exec_id = client.api.exec_create(container.id, 'bash', stdin=True, tty=True)
+#         exec_stream = client.api.exec_start(exec_id, stream=True, tty=True)
 
-        # Stream the terminal output in a separate thread
-        thread = Thread(target=stream_terminal_output, args=(exec_stream,))
-        thread.start()
+#         # Stream the terminal output in a separate thread
+#         thread = Thread(target=stream_terminal_output, args=(exec_stream,))
+#         thread.start()
 
-        emit('terminal_output', {'output': 'Started terminal session\n'})
-    except Exception as e:
-        emit('terminal_output', {'output': f"Error: {str(e)}\n"})
+#         emit('terminal_output', {'output': 'Started terminal session\n'})
+#     except Exception as e:
+#         emit('terminal_output', {'output': f"Error: {str(e)}\n"})
 
-@socketio.on('input_command')
-def handle_input_command(data):
-    """Send user input to the container's terminal."""
-    command = data.get('command', '')
-    try:
-        container = client.containers.get(MAIN_CONTAINER_ID)
+# @socketio.on('input_command')
+# def handle_input_command(data):
+#     """Send user input to the container's terminal."""
+#     command = data.get('command', '')
+#     try:
+#         container = client.containers.get(MAIN_CONTAINER_ID)
 
-        # Execute the command inside the running container's terminal session
-        exec_id = client.api.exec_create(container.id, f'bash -c "{command}"', stdin=True, tty=True)
-        exec_stream = client.api.exec_start(exec_id)
-        emit('terminal_output', {'output': exec_stream.decode('utf-8')})
-    except Exception as e:
-        emit('terminal_output', {'output': f"Error: {str(e)}\n"})
+#         # Execute the command inside the running container's terminal session
+#         exec_id = client.api.exec_create(container.id, f'bash -c "{command}"', stdin=True, tty=True)
+#         exec_stream = client.api.exec_start(exec_id)
+#         emit('terminal_output', {'output': exec_stream.decode('utf-8')})
+#     except Exception as e:
+#         emit('terminal_output', {'output': f"Error: {str(e)}\n"})
 
-def stream_terminal_output(exec_stream):
-    """Continuously stream the terminal output from the container."""
-    for output in exec_stream:
-        socketio.emit('terminal_output', {'output': output.decode('utf-8')})
+# def stream_terminal_output(exec_stream):
+#     """Continuously stream the terminal output from the container."""
+#     for output in exec_stream:
+#         socketio.emit('terminal_output', {'output': output.decode('utf-8')})
 
 
 @app.route('/chat', methods=['POST'])

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Terminal in Browser</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm/css/xterm.css" />
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    #terminal-container {
+      width: 100%;
+      height: 100%;
+    }
+  </style>
+</head>
+<body>
+  <div id="terminal-container"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/xterm/lib/xterm.js"></script>
+  <script>
+    const socket = new WebSocket(`ws://${window.location.host}`);
+    const term = new Terminal();
+
+    term.open(document.getElementById('terminal-container'));
+
+    // When receiving data from the WebSocket, write it to the terminal
+    socket.onmessage = (event) => {
+      term.write(event.data);
+    };
+
+    // When input is entered into the terminal, send it to the WebSocket server
+    term.onData((data) => {
+      socket.send(data);
+    });
+
+    // Handle WebSocket closure
+    socket.onclose = () => {
+      term.write('\r\nConnection closed.\r\n');
+    };
+
+    // Resize the terminal window
+    window.addEventListener('resize', () => {
+      term.fit();
+    });
+  </script>
+</body>
+</html>
