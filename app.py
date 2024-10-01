@@ -10,10 +10,10 @@ app = Flask(__name__)
 socketio = SocketIO(app)
 client = docker.from_env()
 CODE_DIRECTORY = 'volume'  # Directory where your code files are stored
-MAIN_CONTAINER_ID = "c99ebdf3a5f9"
+MAIN_CONTAINER_ID = "5005b1fbd896"
 # Create the Groq client with API key
 client = Groq(api_key="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")
-CORS(app, resources={r"/*": {"origins": "https://5000-userfrom1995-codetutor-4jawtjmljtv.ws-us116.gitpod.io/"}})
+CORS(app)
 
 # Initial system prompt
 system_prompt = {
