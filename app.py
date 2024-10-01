@@ -1,8 +1,9 @@
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify, render_template, send_from_directory
 import os
 from groq import Groq
 
 app = Flask(__name__)
+CODE_DIRECTORY = 'volume'
 
 # Create the Groq client with API key
 client = Groq(api_key="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")
@@ -59,6 +60,27 @@ def chat_with_groq():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+@app.route('/load_file/<language>')
+def load_file(language):
+    file_mapping = {
+        'python': 'main.py',
+        'javascript': 'main.js',
+        'cpp': 'main.cpp',
+        'java': 'main.java',
+        'c': 'main.c'
+    }
+
+    file_name = file_mapping.get(language)
+    if file_name:
+        file_path = os.path.join(CODE_DIRECTORY, file_name)
+        try:
+            with open(file_path, 'r') as file:
+                content = file.read()
+            return content, 200
+        except Exception as e:
+            return f'Error reading file: {str(e)}', 500
+    return 'File not found', 404
 
 
 if __name__ == '__main__':

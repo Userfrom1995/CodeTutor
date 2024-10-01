@@ -63,6 +63,9 @@
             <option value="python">Python</option>
             <option value="javascript">JavaScript</option>
             <option value="cpp">C++</option>
+            <option value="c">C</option>
+            <option value="java">java</option>
+
         </select>
         <textarea id="codeEditor" class="form-control" rows="15"></textarea>
         <button class="btn btn-success mt-3" id="runCode">Run Code</button>
@@ -84,6 +87,22 @@
     // Close the code editor
     $('#closeEditor').click(function () {
         $('body').removeClass('editor-open');
+    });
+
+    // Load the file corresponding to the selected language
+    function loadFile(language) {
+        fetch(`/load_file/${language}`)
+            .then(response => response.text())
+            .then(data => {
+                document.getElementById('codeEditor').value = data; // Load file content into the editor
+            })
+            .catch(error => console.error('Error loading file:', error));
+    }
+
+    // Handle language selection change
+    document.getElementById('languageDropdown').addEventListener('change', function() {
+        const selectedLanguage = this.value;
+        loadFile(selectedLanguage); // Load the corresponding file
     });
 
     // Handle chat send
